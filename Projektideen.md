@@ -39,6 +39,7 @@ Hattet ihr schonmal diesen Moment, wo ihr euch mit einer wildfremden Person unte
 - Accountmanagement: Wär hätte es gedacht, auch hier ist wieder Accounmanagement möglich
 ### ❌Nachteile
 - Simple Datenbanken: Die Datenbanken könnten zwar sehr groß, aber recht simpel werden. Durch das immergleiche Konzept von Person - Beziehung - Person könnte man die geringe Komplexität der Datenbank kritisieren.
+- große Menge an Daten benötigt, dass das Projekt funktioniert
 <hr>
 
 ## 👾Pixelart Market
