@@ -56,14 +56,17 @@ function create_user_table($connection) {
     $tableName = 'user';
 
     // SQL-Befehl zur Erstellung der Relation "user", falls sie noch nicht existiert
-    $sql = "CREATE TABLE IF NOT EXISTS `$dbname`.`$tableName` (
-        `username` VARCHAR(32) NOT NULL, 
-        `displayname` VARCHAR(10) NOT NULL, 
-        `password` VARCHAR(255) NOT NULL, 
-        `email` VARCHAR(32) NOT NULL,
-        PRIMARY KEY (`username`)
+    $sql = "CREATE TABLE IF NOT EXISTS `fraguns_datenbankprojekt`.$tableName (
+    `username` VARCHAR(32) NOT NULL,
+    `displayname` VARCHAR(10) NOT NULL,
+    `password` VARCHAR(256) NOT NULL,
+    `email` VARCHAR(32) NOT NULL,
+    `verified` BOOLEAN NOT NULL DEFAULT FALSE,
+    `verification_code` VARCHAR(256) NULL DEFAULT NULL,
+    `verification_expires` DATETIME NULL DEFAULT NULL,
+    PRIMARY KEY (`username`),
+    UNIQUE (`email`)
     ) ENGINE = InnoDB;";
-
     try {
         $connection->query($sql);
         return 0;
@@ -90,7 +93,6 @@ function setup_database() {
             return $connection;
         }
     } else {
-        echo 'Database already exists'; // Temporär
 
         // Nun können alle Relationen auf ihre Existenz geprüft und bei Bedarf erstellt werden
         $result = create_user_table($connection);
