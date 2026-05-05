@@ -12,6 +12,10 @@ if ($errorCode instanceof Throwable) {
     exit();
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+}
+
 ?>
 
 <!Doctype html>
@@ -50,19 +54,58 @@ if ($errorCode instanceof Throwable) {
                         <input id="4" class="code-input">
                         <input id="5" class="code-input">
                     </div>
+                    <button class="option" type="submit"><p>Verifizieren</p></button>
                     <script>
                         // Automatisches Ausfüllen des Codes
-                        const id = new URLSearchParams(window.location.search).get('code');
-                        if (id !== null && /^\d{6}$/.test(id)){
-                            document.getElementById("0").value = id[0] ?? "";
-                            document.getElementById("1").value = id[1] ?? "";
-                            document.getElementById("2").value = id[2] ?? "";
-                            document.getElementById("3").value = id[3] ?? "";
-                            document.getElementById("4").value = id[4] ?? "";
-                            document.getElementById("5").value = id[5] ?? "";
+                        const code = new URLSearchParams(window.location.search).get('code');
+                        const inputs = document.querySelectorAll('.code-input');
+                        if (code !== null && /^\d{6}$/.test(code)){ // Regex code zum Testen auf gültiges Code-Format
+                            // Ziffern auf die Felder verteilen
+                            code.split('').forEach((char, index) => {
+                                if (inputs[index]) inputs[index].value = char;
+                            });
                         }
+                        inputs[0].addEventListener("focus", async() => { // Sobald man ins erste Feld klickt
+                            try {
+                                let code = await navigator.clipboard.readText();
+                                code = code.replace(/\s/g, ''); // Zeilenumbrüche entfernen
+                                if (/^\d{6}$/.test(code)) {
+                                    // Ziffern auf die Felder verteilen
+                                    code.split('').forEach((char, index) => {
+                                        if (inputs[index]) inputs[index].value = char;
+                                    });
+                                }
+                            } catch (err) {
+
+                            }
+                        }, { once: true }) // Der Listener funktioniert nur beim ersten Klick in ein Feld. Somit wird verhindert, dass man nichts eigenes mehr eingeben kann.
+                        // Listened für ein Paste-Event
+                        document.querySelector('.verify-code').addEventListener('paste', (e) => {
+                            e.preventDefault(); // Verhindert, dass Einfügen
+                            let code = e.clipboardData.getData('text');
+                            code = code.replace(/\s/g, ''); // Zeilenumbrüche entfernen
+                            if (/^\d{6}$/.test(code)) {
+                                // Auf die Felder verteilen
+                                code.split('').forEach((char, index) => {
+                                    if (inputs[index]) inputs[index].value = char;
+                                });
+                            }
+                        });
+                        inputs.forEach((input, index) => {
+                            input.addEventListener('input', (e) => { // Bei jedem Input
+                                const value = e.target.value;
+                                if (/^\d{1}$/.test(value) && index < inputs.length - 1) { // Bei einzelnen Ziffern, sofern nicht im letzten Feld
+                                    inputs[index + 1].focus(); // Fokus aufs nächste Feld
+                                } else if (/^\d{1}$/.test(value) && index == inputs.length) {
+                                }
+                            });
+                            input.addEventListener('keydown', (e) => {
+                                if (e.key === 'Backspace' && input.value === '' && index > 0) {
+                                    inputs[index - 1].focus(); //Felder zurück
+                                }
+                            });
+                        });
                     </script>
-                    <button class="option" type="submit"><p>Verifizieren</p></button>
                 </form>
                 <p><a>Klicken Sie hier um den Code erneut per E-Mail zu senden.</a></p>
             </div>
