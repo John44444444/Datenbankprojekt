@@ -8,6 +8,8 @@ TODO
 Daraus resultieren folgende Relationen in der Datenbank:  
 TODO  
 ## Funktionen und Inhalte
+### Setup
+Die Datei setup.php prüft bei Ihrem Aufruf automatisch, ob bereits eine Datenbank existiert und erstellt diese falls nicht. Zudem erstellt die Datei alle Relationen in der Datenbank, falls noch nicht vorhanden. Außerdem enthält die Datei die Funktion, zur Verbindung mit der Datenbank, welche von anderen Dateien genutzt werden kann.
 ### Registrieren
 Die Registrierung läuft über die Datei register.php ab. Dabei gibt es im Formular für die Registrierung die Felder "Benutzername", "Anzeigename", "E-Mail" und "Passwort".
 <img width="518" height="566" alt="image" src="https://github.com/user-attachments/assets/8b8d718a-dc54-463b-b82c-067ee35f9927" />
