@@ -5,7 +5,7 @@ Folgendes UML Anwendungsfalldiagramm zeigt die grundlegenden Funktionen von Frag
 <img width="650" height="665" alt="image" src="https://github.com/user-attachments/assets/0801015e-4e8c-43c3-a0e6-dc9c9635a926" />
 Folgendes ER-Modell zeigt die Grundlegende Projektstruktur der Entitäten und Beziehungen:  
 <img width="1302" height="891" alt="image" src="https://github.com/user-attachments/assets/957ec917-273f-4607-87eb-e0c1ba016f61" />
-Daraus resultieren folgende Relationen in der Datenbank:  
+Daraus resultieren folgende Relationen in der Datenbank (leider werden hier die Unterstrichenen Wörter nicht richtig angezeigt):  
 groups(<u>group_id</u>, ↑admin_username, group_name)
 user(<u>username</u>, display_name, password)
 simple_questions(↑<u>group_id</u>, <u>question_text</u>, ↑<u>creator_username</u>, ↑<u>expiration_date</u>)
@@ -19,6 +19,8 @@ user_answers_simple_question(↑<u>username</u>, ↑<u>group_id</u>, answer)
 user_answers_text_question(↑<u>username</u>, ↑<u>group_id</u>, answer)
 user_answers_multiple_choice(↑<u>username</u>, ↑<u>group_id</u>, option_name)
 user_answers_ranking(↑<u>username</u>, ↑<u>group_id</u>, option_name)
+Hier noch ein Bild mit der richtigen Anzeige:
+<img width="841" height="389" alt="image" src="https://github.com/user-attachments/assets/2a09f276-cf52-42ba-bbc5-d7526692b32c" />
 ## Funktionen und Inhalte
 ### Setup
 Die Datei setup.php prüft bei Ihrem Aufruf automatisch, ob bereits eine Datenbank existiert und erstellt diese falls nicht. Zudem erstellt die Datei alle Relationen in der Datenbank, falls noch nicht vorhanden. Außerdem enthält die Datei die Funktion, zur Verbindung mit der Datenbank, welche von anderen Dateien genutzt werden kann.
