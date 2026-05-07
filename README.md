@@ -4,9 +4,21 @@ Dieses Projekt ist ein Schulprojekt im Rahmen des Informatikunterrichts.
 Folgendes UML Anwendungsfalldiagramm zeigt die grundlegenden Funktionen von FragUns:
 <img width="650" height="665" alt="image" src="https://github.com/user-attachments/assets/0801015e-4e8c-43c3-a0e6-dc9c9635a926" />
 Folgendes ER-Modell zeigt die Grundlegende Projektstruktur der Entitäten und Beziehungen:  
-<img width="1210" height="832" alt="image" src="https://github.com/user-attachments/assets/f085742e-d941-45d3-a168-f3d922f8bd92" />
+<img width="1302" height="891" alt="image" src="https://github.com/user-attachments/assets/957ec917-273f-4607-87eb-e0c1ba016f61" />
 Daraus resultieren folgende Relationen in der Datenbank:  
-TODO  
+groups(<u>group_id</u>, ↑admin_username, group_name)
+user(<u>username</u>, display_name, password)
+simple_questions(↑<u>group_id</u>, <u>question_text</u>, ↑<u>creator_username</u>, ↑<u>expiration_date</u>)
+multiple_choice_questions(↑<u>group_id</u>, <u>question_text</u>, ↑<u>creator_username</u>, ↑<u>expiration_date</u>)
+multiple_choice_options(<u>option_text</u>)
+text_questions(↑<u>group_id</u>, ↑<u>question_text</u>, ↑<u>creator_username</u>, ↑<u>expiration_date</u>)
+ranking_questions(↑<u>group_id</u>, ↑<u>question_text</u>, ↑<u>creator_username</u>, ↑<u>expiration_date</u>)
+ranking_options(<u>option_text</u>)
+group_users(↑<u>username</u>, ↑<u>group_id</u>)
+user_answers_simple_question(↑<u>username</u>, ↑<u>group_id</u>, answer)
+user_answers_text_question(↑<u>username</u>, ↑<u>group_id</u>, answer)
+user_answers_multiple_choice(↑<u>username</u>, ↑<u>group_id</u>, option_name)
+user_answers_ranking(↑<u>username</u>, ↑<u>group_id</u>, option_name)
 ## Funktionen und Inhalte
 ### Setup
 Die Datei setup.php prüft bei Ihrem Aufruf automatisch, ob bereits eine Datenbank existiert und erstellt diese falls nicht. Zudem erstellt die Datei alle Relationen in der Datenbank, falls noch nicht vorhanden. Außerdem enthält die Datei die Funktion, zur Verbindung mit der Datenbank, welche von anderen Dateien genutzt werden kann.
