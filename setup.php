@@ -51,16 +51,32 @@ function create_database($connection){
     }
 }
 
+
+function create_token_table($connection) {
+    $dbname = 'fraguns_datenbankprojekt';
+    $tableName = 'login_tokens';
+
+    // SQL-Befehl zur Erstellung der Relation "login_tokens", falls sie noch nicht existiert
+    $sql = "CREATE TABLE IF NOT EXISTS `fraguns_datenbankprojekt`.`login_tokens` (`username` VARCHAR(20) NOT NULL , `token` VARCHAR(32) NOT NULL, PRIMARY KEY (`token`)) ENGINE = InnoDB;";
+    try {
+        $connection->query($sql);
+        return 0;
+    } catch (mysqli_sql_exception $e) {
+        return $e;
+    }
+}
+
+
 function create_user_table($connection) {
     $dbname = 'fraguns_datenbankprojekt';
     $tableName = 'user';
 
     // SQL-Befehl zur Erstellung der Relation "user", falls sie noch nicht existiert
     $sql = "CREATE TABLE IF NOT EXISTS `fraguns_datenbankprojekt`.$tableName (
-    `username` VARCHAR(32) NOT NULL,
+    `username` VARCHAR(20) NOT NULL,
     `displayname` VARCHAR(10) NOT NULL,
     `password` VARCHAR(256) NOT NULL,
-    `email` VARCHAR(32) NOT NULL,
+    `email` VARCHAR(20) NOT NULL,
     `verified` BOOLEAN NOT NULL DEFAULT FALSE,
     `verification_code` VARCHAR(256) NULL DEFAULT NULL,
     `verification_expires` DATETIME NULL DEFAULT NULL,
@@ -89,19 +105,24 @@ function setup_database() {
             return 500;
         } else {
             echo 'Database created successfully'; // Temporär
-            $connection->close();
-            return $connection;
         }
-    } else {
-
-        // Nun können alle Relationen auf ihre Existenz geprüft und bei Bedarf erstellt werden
-        $result = create_user_table($connection);
-        if ($result instanceof Throwable) {
-            error_log("Error while creating table: " . $result->getMessage());
-            $connection->close();
-            return 503;
-        }
-        $connection->close();
-        return $connection;
     }
+
+    // Nun können alle Relationen auf ihre Existenz geprüft und bei Bedarf erstellt werden
+    $result = create_user_table($connection);
+    if ($result instanceof Throwable) {
+        error_log("Error while creating table: " . $result->getMessage());
+        $connection->close();
+        return 503;
+    }
+    $result = create_token_table($connection);
+    if ($result instanceof Throwable) {
+        error_log("Error while creating table: " . $result->getMessage());
+        $connection->close();
+        return 503;
+    }
+    $connection->close();
+    return $connection;
 }
+
+setup_database();

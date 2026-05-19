@@ -1,6 +1,7 @@
 <?php
 // require ist hier wichtig, weil die App ohne den Zugriff auf Datenbanken nicht funktioniert und setup.php sicherstellt, dass diese korrekt existieren.
 require_once __DIR__ . '/setup.php';
+require __DIR__ . "/send_verify_mail.php";
 
 // Setup der Datenbank
 $errorCode = setup_database();
@@ -12,8 +13,61 @@ if ($errorCode instanceof Throwable) {
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $username = $_GET['username'];
+    $db = connect_to_database();
+    if ($db instanceof Throwable) {
+        http_response_code(500);
+        exit();
+    } else if (isset($_GET["resend_mail"])){
+        $username = $_GET["username"] ?? "";
+        $verification_code = random_int(100000, 999999);
+        $hashed_verification_code = password_hash($verification_code, PASSWORD_DEFAULT);
+        // Email-Adresse bekommen
+        $sql = $db->prepare("SELECT email FROM user WHERE username=?");
+        $sql->bind_param("s", $username);
+        $sql->execute();
+        $result = $sql->get_result();
+        $row = $result->fetch_assoc();
+        $to = $row['email'];
+        $sql = $db->prepare("UPDATE user SET verification_code=? WHERE username=?");
+        $sql->bind_param("ss", $hashed_verification_code, $username);
+        $sql->execute();
+        $sql->get_result();
+        send_verify_mail($to, $verification_code, $username);
+    }
+}
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $db = connect_to_database();
+        if ($db instanceof Throwable) {
+            http_response_code(500);
+            exit();
+        } else {
+            try {
+                if (preg_match("/^\d$/", $_POST["0"]) && preg_match("/^\d$/", $_POST["1"]) && preg_match("/^\d$/", $_POST["2"]) && preg_match("/^\d$/", $_POST["3"]) && preg_match("/^\d$/", $_POST["4"]) && preg_match("/^\d$/", $_POST["5"])) {
+                    $username = $_GET["username"] ?? "";
+                    $verification_code = $_POST["0"] . $_POST["1"] . $_POST["2"] . $_POST["3"] . $_POST["4"] . $_POST["5"];
+                    $hashed_verification_code = password_hash($verification_code, PASSWORD_DEFAULT);
+                    $sql = $db->prepare("SELECT verification_code FROM user WHERE username=?");
+                    $sql->bind_param("s", $username);
+                    $sql->execute();
+                    $result = $sql->get_result();
+                    $row = $result->fetch_assoc();
+                    // Korrekter Verifizierungs-Code
+                    if (password_verify($verification_code, (string)$row["verification_code"])){
+                        $sql = $db->prepare("UPDATE user SET verified=? WHERE username=?");
+                        $wahr = 1;
+                        $sql->bind_param("is", $wahr, $username);
+                        $sql->execute();
+                        header("Location: login.php");
+                        exit;
+                    }
+                }
+            } catch (Exception $e) {
+                error_log($e->getMessage());
+            }
+        }
 }
 
 ?>
@@ -47,12 +101,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p>Bitte geben Sie den Code ein, den Sie per E-Mail erhalten haben.</p>
                 <form id="form" method="post">
                     <div class="verify-code">
-                        <input id="0" class="code-input">
-                        <input id="1" class="code-input">
-                        <input id="2" class="code-input">
-                        <input id="3" class="code-input">
-                        <input id="4" class="code-input">
-                        <input id="5" class="code-input">
+                        <input id="0" name="0" class="code-input">
+                        <input id="1" name="1" class="code-input">
+                        <input id="2" name="2" class="code-input">
+                        <input id="3" name="3" class="code-input">
+                        <input id="4" name="4" class="code-input">
+                        <input id="5" name="5" class="code-input">
                     </div>
                     <button class="option" type="submit"><p>Verifizieren</p></button>
                     <script>
@@ -107,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         });
                     </script>
                 </form>
-                <p><a>Klicken Sie hier um den Code erneut per E-Mail zu senden.</a></p>
+                    <a href=<?php echo "verify.php?resend_mail=true&username=" . urlencode($username); ?>>Klicken Sie hier um den Code erneut per E-Mail zu senden.</a>
             </div>
         </main>
         <footer>
