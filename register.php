@@ -1,16 +1,7 @@
 <?php
 // require ist hier wichtig, weil die App ohne den Zugriff auf Datenbanken nicht funktioniert und setup.php sicherstellt, dass diese korrekt existieren.
 require_once __DIR__ . '/setup.php';
-
-// Setup der Datenbank
-$errorCode = setup_database();
-if ($errorCode instanceof Throwable) {
-    http_response_code(500);
-    exit();
-} elseif (is_int($errorCode)) {
-    http_response_code($errorCode);
-    exit();
-}
+require __DIR__ . '/send_verify_mail.php';
 
 // Todo: Registrierungslogik
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -20,82 +11,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             http_response_code(500);
             exit();
         } else {
-            $verification_code = random_int(100000, 999999);
-            $sql = $db->prepare("INSERT INTO user (username, displayname, password, email, verification_code, verification_expires) VALUES (?, ?, ?, ?, ?, ?)");
-            $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            $hashed_verification_code = password_hash($verification_code, PASSWORD_DEFAULT);
-            $sql->bind_param("ssssss", $_POST['username'], $_POST['display_name'], $hashed_password, $_POST['email'], $hashed_verification_code, date('Y-m-d H:i:s', time() + 15 * 60));
+            // Prüfen, ob die E-Mail-Adresse bereits registriert ist
+            $sql = $db->prepare("SELECT COUNT(*) AS count FROM user WHERE email=?");
+            $sql->bind_param("s", $_POST['email']);
             $sql->execute();
-            $sql->get_result();
-            $verification_code = (string) $verification_code;
-            $to = $_POST["email"];
-            $subject = "Registrierung best&#228;tigen | FragUns";
-            $message = '<!Doctype html>
-<html lang=de>
-    <head>
-        <meta charset=UTF-8>
-        <meta name=viewport content="width=device-width, initial-scale=1.0">
-        <title>FragUns - Registrieren</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
-    </head>
-    <body style="text-align: center;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: "Varela Round", sans-serif;
-    font-weight: 400;
-    font-style: normal;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;">
-        <header style="background-color: #ffffff36;
-    border-radius: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    margin: 20px auto;"><h1>FragUns benötigt Ihre Bestätigung</h1></header>
-        <main>
-            <div class="card" style="width: 100%;
-    background-color: #ffffff36;
-    border-radius: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    margin: 20px auto;
-    min-height: 50px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;">
-                <h2>Schließen Sie jetzt Ihre Registrierung ab</h2>
-                <table width="250px;">
-                    <td style="margin: 10px; border-radius: 10px; border: 2px solid black;"><h1>' . $verification_code[0] . '</h1></td>
-                    <td style="margin: 10px; border-radius: 10px; border: 2px solid black;"><h1>' . $verification_code[1] . '</h1></td>
-                    <td style="margin: 10px; border-radius: 10px; border: 2px solid black;"><h1>' . $verification_code[2] . '</h1></td>
-                    <td style="margin: 10px; border-radius: 10px; border: 2px solid black;"><h1>' . $verification_code[3] . '</h1></td>
-                    <td style="margin: 10px; border-radius: 10px; border: 2px solid black;"><h1>' . $verification_code[4] . '</h1></td>
-                    <td style="margin: 10px; border-radius: 10px; border: 2px solid black;"><h1>' . $verification_code[5] . '</h1></td>
-                </table>
-                <a href="http://fraguns.bplaced.net/datenbankprojekt/verify.php?username=' . $_POST['username'] . '&code=' . $verification_code . '"  style="color:black; text-decoration: none;">
-   Registrierung bestätigen
-</a>
-                <h3>Das waren Sie nicht?</h3>
-                <p>Sie können diese E-Mail löschen. Die Registrierung wird automatisch abgebrochen und ihre E-Mail-Adresse wird aus der Datenbank entfernt.</p>
-            </div>
-        </main>
-        <footer>
-            <a href="http://fraguns.bplaced.net/" style="color:black; text-decoration: none;">FragUns</a> |
-            <a href="http://fraguns.bplaced.net/datenbankprojekt/impressum.html" style="color:black; text-decoration: none;">Impressum</a> |
-            <a href="mailto:luckyart@gmx.de" style="color:black; text-decoration: none;">Kontakt</a>
-        </footer>
-    </body>
-</html>';
-            $headers = "MIME-Version: 1.0" . "\r\n";
-            $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-            $headers .= "From: absender@example.com";
-            mail($to, $subject, $message, $headers);
-            header("Location: verify.php?username=" . $_POST['username']);
-            exit;
+            $result = $sql->get_result();
+            $row = $result->fetch_assoc();
+            // Wenn E-Mail-Adresse bereits registriert ist, wird die/der Benutzer*in darüber informiert
+            if ($row['count'] > 0) {
+                $to = $_POST["email"];
+                send_already_registered_mail($to);
+                header("Location: verify.php?username=" . $_POST['username']);
+                exit;
+            } else { // Ansonsten wird der/die Benutzer*in normal registriert
+                $verification_code = 100000; // random_int(100000, 999999); Temprär auskommentiert zum einfachen lokalen testen
+                $sql = $db->prepare("INSERT INTO user (username, displayname, password, email, verification_code, verification_expires) VALUES (?, ?, ?, ?, ?, ?)");
+                $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+                $hashed_verification_code = password_hash($verification_code, PASSWORD_DEFAULT);
+                $sql->bind_param("ssssss", $_POST['username'], $_POST['display_name'], $hashed_password, $_POST['email'], $hashed_verification_code, date('Y-m-d H:i:s', time() + 15 * 60));
+                $sql->execute();
+                $sql->get_result();
+                $to = $_POST["email"];
+                $username = $_POST["username"];
+                send_verify_mail($to, $verification_code, $username);
+                header("Location: verify.php?username=" . $_POST['username']);
+                exit;
+            }
         }
     } else {
         echo "<script>alert('Bitte überprüfen Sie die eingegebenen Daten.')</script>";
@@ -104,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 ?>
 
-<!Doctype html>
 <html lang=de>
     <head>
         <meta charset=UTF-8>
@@ -138,16 +78,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span id="email-status" style="color: red;"></span>
                     <input id="password" name="password" placeholder="Passwort" type="password">
                     <span id="password-status" style="color: red;"></span>
+                    <div style="display:grid; grid-template-columns: 20px 1fr; align-items: center; gap: 10px;">
+                        <input id="accept_terms" name="accept_terms" type="checkbox">
+                        <label for="accept_terms">Ich habe die <a href="terms.html" style="text-decoration: underline;">Nutzungsbedingungen</a> und die <a href="terms.html" style="text-decoration: underline;">Datenschutzbestimmungen</a> gelesen und akzeptiere sie.</label>
+                    </div>
+                    <span id="accept-terms-status" style="color: red;"></span>
                     <div class="cf-turnstile" data-sitekey="0x4AAAAAADAsYxWSwYU4ejyd"></div>
                     <button class="option" type="submit"><p>Registrieren</p></button>
                 </form>
             </div>
         </main>
-        <nav>
-            <a>Link1</a>
-            <a>Link2</a>
-            <a>Link3</a>
-        </nav>
         <footer>
             <a href="impressum.html">Impressum</a>
         </footer>
@@ -162,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const statusPassword = document.getElementById('password-status');
             const emailInput = document.getElementById('email');
             const statusEmail = document.getElementById('email-status');
+            const accept_termsInput = document.getElementById('accept_terms');
+            const statusAcceptTerms = document.getElementById('accept-terms-status');
 
             // Verfügbarkeit des Benutzernamens
             usernameInput.addEventListener('input', function() {
@@ -216,7 +158,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             });
 
-            
+            // Terms of Service
+            accept_termsInput.addEventListener('input', function() {
+                if (this.checked) {
+                    statusAcceptTerms.textContent = "";
+                }
+            });
+
             formInput.addEventListener('submit', function(event) {
                 event.preventDefault();
                 console.log(passwordInput)
@@ -253,6 +201,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Anzeigename
                 if (displayNameInput.value.length === 0) {
                     statusDisplayName.textContent = "Bitte geben sie einen Anzeigenamen ein.";
+                    everythingValid = false;
+                }
+
+                // Terms of Service
+                if (!accept_termsInput.checked) {
+                    statusAcceptTerms.textContent = "Bitte akzeptieren Sie die Nutzungsbedingungen und Datenschutzbestimmungen.";
                     everythingValid = false;
                 }
 
