@@ -38,14 +38,17 @@ function creat_groupmember_tabel($connection) {
     }
 }
 
-$username = "test";
-$groupid = "3";
+//input von websiten variable 
+$username = "m";
+$groupid = "1";
 $groupname="testergang";
 
 function creat_group($connection, $username, $groupname){
-    $sql = "INSERT INTO `group_admin` (`admin_username`, `group_name`) VALUES ('$username', '$groupname');";
     try {
-        $connection->query($sql);
+        $sql = $connection->prepare("INSERT INTO `group_admin` (`admin_username`, `group_name`) VALUES (?, ?);");
+        $sql->bind_param("ss", $username, $groupname);
+        $sql->execute();
+        $sql->get_result();
         return 0;
     } catch (mysqli_sql_exception $e) {
         return $e;
@@ -90,14 +93,11 @@ function check_rights($connection, $personalusername, $admin, $groupid){
 
     try {
         $sql = $connection->prepare("SELECT admin_username FROM group_admin WHERE group_id = ?");
-        $sql->bind_param("s", $groupid);
+        $sql->bind_param("i", $groupid);
         $sql->execute();
         $result = $sql->get_result();
         $row = $result->fetch_assoc();
         $ergebnis = $row['admin_username'];
-        echo($ergebnis);
-        
-        echo($personalusername);
         if($ergebnis === $personalusername){
             return $ergebnis;
         } else {
@@ -118,4 +118,7 @@ echo(creat_groupmember_tabel(connect_to_database()));
 echo(creat_group_table(connect_to_database()));
 echo(creat_group(connect_to_database(),$username, $groupname));
 echo(check_rights(connect_to_database(),$personalusername, $admin, $groupid));
-//echo(add_groupmember(connect_to_database(),$username, $groupid));
+echo(add_groupmember(connect_to_database(),$username, $groupid));
+
+
+
